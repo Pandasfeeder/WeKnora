@@ -101,8 +101,16 @@ jobs:
         shell: bash
         run: |
           cd cmd/desktop
+          # 删除 go.sum 中 mysql 驱动的旧（错误）校验记录
+          grep -v "go-sql-driver/mysql" go.sum > go.sum.tmp || true
+          mv go.sum.tmp go.sum
+          # 重新下载并由 Go 计算正确哈希写回 go.sum
+          GOFLAGS=-mod=mod go mod tidy
           go mod download
           go mod download github.com/go-sql-driver/mysql
+          echo "---- go.sum mysql entries after fix ----"
+          grep "go-sql-driver/mysql" go.sum || echo "(none)"
+
 
       - name: Pre-compile Go packages (Windows)
         shell: bash
