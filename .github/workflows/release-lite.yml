@@ -50,6 +50,8 @@ jobs:
     runs-on: windows-latest
     env:
       CGO_ENABLED: 1
+      GOSUMDB: off
+      GONOSUMDB: "*"
     steps:
       - uses: actions/checkout@v6
 
@@ -68,7 +70,6 @@ jobs:
         run: |
           go clean -modcache
           go clean -cache
-          go env -w GOTOOLCHAIN=auto
         shell: bash
 
       - name: Install Wails CLI
@@ -95,6 +96,13 @@ jobs:
             VERSION="${GITHUB_REF#refs/tags/}"
           fi
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Download Go modules
+        shell: bash
+        run: |
+          cd cmd/desktop
+          go mod download
+          go mod download github.com/go-sql-driver/mysql
 
       - name: Pre-compile Go packages (Windows)
         shell: bash
