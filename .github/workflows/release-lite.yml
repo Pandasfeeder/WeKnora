@@ -75,7 +75,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: true
+          cache: false
 
       - uses: actions/download-artifact@v8
         with:
@@ -170,7 +170,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version: ${{ env.GO_VERSION }}
-          cache: true
+          cache: false
 
       - uses: actions/setup-node@v6
         with:
