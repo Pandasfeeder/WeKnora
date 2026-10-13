@@ -71,17 +71,19 @@ jobs:
           go env -w GOTOOLCHAIN=auto
         shell: bash
 
-      - name: Download frontend artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: frontend-dist
-          path: cmd/desktop/frontend/dist
-
       - name: Install Wails CLI
         run: go install github.com/wailsapp/wails/v2/cmd/wails@latest
 
       - name: Install NSIS (Windows)
         run: choco install nsis -y
+
+      - name: Setup SQLite headers (Windows)
+        shell: bash
+        run: |
+          curl -L -o sqlite-amalgamation.zip https://www.sqlite.org/2024/sqlite-amalgamation-3450100.zip
+          powershell -Command "Expand-Archive -Path sqlite-amalgamation.zip -DestinationPath . -Force"
+          SQLITE_DIR="$(pwd -W)/sqlite-amalgamation-3450100"
+          echo "CGO_CFLAGS=-I${SQLITE_DIR} -Wno-deprecated-declarations" >> "$GITHUB_ENV"
 
       - name: Resolve version
         id: ver
@@ -98,7 +100,6 @@ jobs:
         shell: bash
         run: |
           export GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn
-          export CGO_CFLAGS="-Wno-deprecated-declarations"
           cd cmd/desktop
           go build -p 1 -buildvcs=false -tags "desktop,sqlite_fts5,production" -o _prebuild_tmp.exe . || true
           rm -f _prebuild_tmp.exe
@@ -110,12 +111,9 @@ jobs:
           export GOLANG_PROTOBUF_REGISTRATION_CONFLICT=warn
           eval "$(./scripts/get_version.sh env)"
           LDFLAGS="$(./scripts/get_version.sh ldflags) -X 'google.golang.org/protobuf/reflect/protoregistry.conflictPolicy=warn'"
-          export CGO_CFLAGS="-Wno-deprecated-declarations"
 
           BUILD_TAGS="sqlite_fts5"
           NSIS_FLAG="-nsis"
-
-          export CGO_LDFLAGS="-Wl,-no_warn_duplicate_libraries"
 
           bash ./scripts/check-license-bundle.sh
           cd cmd/desktop
